@@ -166,13 +166,13 @@
       become: true
       become_user: jenkins
       ansible.builtin.get_url:
-        url: https://raw.githubusercontent.com/sunetfreitag/ocm-testautomation-helper/refs/heads/main/infrastructure/overlay/usr/local/jenkins-service/start-agent.sh
+        url: https://raw.githubusercontent.com/sunetfreitag/ocm-testautomation-helper/refs/heads/main/overlay/jenkins-node/usr/local/jenkins-service/start-agent.sh
         dest: /usr/local/jenkins-service/start-agent.sh
 
     - name: Download jenkins service script
       become: true
       ansible.builtin.get_url:
-        url: https://raw.githubusercontent.com/sunetfreitag/ocm-testautomation-helper/refs/heads/main/infrastructure/overlay/etc/systemd/system/jenkins-agent.service
+        url: https://raw.githubusercontent.com/sunetfreitag/ocm-testautomation-helper/refs/heads/main/overlay/jenkins-node/etc/systemd/system/jenkins-agent.service
         dest: /etc/systemd/system/jenkins-agent.service
 
     # TBD: Replace with Research Cloud secret
@@ -228,7 +228,7 @@
       become: true
       become_user: jenkins
       ansible.builtin.get_url:
-        url: https://raw.githubusercontent.com/sunetfreitag/ocm-testautomation-helper/refs/heads/main/infrastructure/overlay/var/lib/jenkins/bashrc
+        url: https://raw.githubusercontent.com/sunetfreitag/ocm-testautomation-helper/refs/heads/main/overlay/jenkins-node/var/lib/jenkins/bashrc
         dest: ~/.bashrc
 
     - name: Touch .Xauthority file required by some tests
