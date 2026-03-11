@@ -1,0 +1,144 @@
+---
+- name: Install Docker Engine on Ubuntu
+  hosts: all
+  # become: true
+  vars:
+    filesender_repo: "https://github.com/sunetfreitag/filesender.git"
+    filesender_branch: "development"
+    filesender_app_dir: "~/filesender"
+  tasks:
+    - name: Update apt package index
+      become: true
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install prerequisite packages
+      become: true
+      ansible.builtin.package:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Add Docker's official GPG key
+      become: true
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Add Docker repository
+      become: true
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Update apt package index after adding Docker repo
+      become: true
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install Docker Engine
+      become: true
+      ansible.builtin.package:
+        name: docker-ce
+        state: latest
+
+    - name: Start and enable Docker service
+      become: true
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Ensure group "docker" exists with correct gid
+      become: true
+      ansible.builtin.group:
+        name: docker
+        state: present
+        gid: 1750
+
+    - name: Set access permissions for docker socket
+      become: true
+      ansible.builtin.file:
+        path: /var/run/docker.sock
+        mode: "0666"
+
+    - name: Add the ansible user to the docker group
+      become: true
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: Clone FileSender repository
+      git:
+        repo: "{{ filesender_repo }}"
+        dest: "{{ filesender_app_dir }}"
+        version: "{{ filesender_branch }}"
+        force: yes
+
+    - name: Copy .env.example
+      ansible.builtin.copy:
+        src: "~/filesender/docker/.env.example"
+        dest: "~/filesender/docker/.env"
+        remote_src: yes
+
+    - name: Copy local docker compose file
+      ansible.builtin.copy:
+        src: "../overlay/filesender/docker-compose.yml"
+        dest: "~/filesender/docker/docker-compose.yml"
+
+    - name: Copy local docker file
+      ansible.builtin.copy:
+        src: "../overlay/filesender/Dockerfile"
+        dest: "~/filesender/docker/Dockerfile"
+
+    - name: Copy filesender config file
+      ansible.builtin.copy:
+        src: "../overlay/filesender/config.php"
+        dest: "~/filesender/docker/assets/opt/filesender/filesender/config/config.php"
+
+    - name: Make asset directory for custom auth class
+      ansible.builtin.file:
+        path: "~/filesender/docker/assets/opt/filesender/filesender/classes/auth/"
+        state: directory
+
+    - name: Copy custom auth class
+      ansible.builtin.copy:
+        src: "../overlay/filesender/AuthSPCookie.class.php"
+        dest: "~/filesender/docker/assets/opt/filesender/filesender/classes/auth/AuthSPCookie.class.php"
+
+    - name: Filesender make firstrun - this might take some time
+      make:
+        chdir: "~/filesender/docker/"
+        target: firstrun
+
+    - name: Create nginx location block
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/nginx/app-location-conf.d/filesender.conf
+        mode: 0644
+        content: |
+          location / {
+              error_page 401 = @custom_401;
+              auth_request /validate;
+              auth_request_set $username $upstream_http_username;
+              proxy_pass http://127.0.0.1:8080;
+              proxy_redirect http://localhost:8080/ $scheme://$host/;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Remoteuser $username;
+              proxy_set_header Connection $connection_upgrade;
+              client_max_body_size 10G;
+          }
+
+    - name: Restart nginx
+      service:
+        name: nginx
+        state: restarted
