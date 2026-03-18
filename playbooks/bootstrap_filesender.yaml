@@ -266,8 +266,8 @@
               client_max_body_size 10G;
           }
 
-    - name: Restart nginx
-      become: true
-      service:
-        name: nginx
-        state: restarted
+    # - name: Restart nginx
+    #   become: true
+    #   service:
+    #     name: nginx
+    #     state: restarted
