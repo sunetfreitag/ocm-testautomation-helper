@@ -254,11 +254,6 @@
               error_page 401 = @custom_401;
               auth_request /validate;
               auth_request_set $username $upstream_http_username;
-
-              if ($auth_request_bypass = 0) {
-                  auth_request off;  # Disable auth_request for ?s=download
-              }
-
               proxy_pass http://127.0.0.1:8080;
               proxy_redirect http://localhost:8080/ $scheme://$host/;
               proxy_set_header X-Real-IP $remote_addr;
@@ -271,7 +266,7 @@
               client_max_body_size 10G;
           }
 
-    # - name: Restart nginz
+    # - name: Restart nginx
     #   become: true
     #   service:
     #     name: nginx
