@@ -149,8 +149,8 @@ $config['auth_sp_saml_authentication_source'] = 'example-sp';
 //    TeraSender high speed upload module
 // --------------------------------------------------
 
-$config['terasender_enabled'] = true;    	//
-$config['terasender_advanced'] = true;    	// Make #webworkers configurable in UI.  Switched this on to make it easy
+$config['terasender_enabled'] = false;    	//
+$config['terasender_advanced'] = false;    	// Make #webworkers configurable in UI.  Switched this on to make it easy
 						// to determine optimal number for terasender_worker_count when going in production.
 						// The useful number of maximum webworkers per browser changes nearly for each browser release.
 $config['terasender_worker_count'] = 5;   	// Number of web workers to launch simultaneously client-side when starting upload
