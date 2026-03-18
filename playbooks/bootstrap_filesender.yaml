@@ -231,12 +231,12 @@
         regexp: "localhost" # The string to be replaced (use regex if needed)
         replace: "{{ filesender_hostname }}" # The variable containing the replacement value
 
-    - name: Filesender make firstrun - this might take some time
-      become: true
-      become_user: "{{ filesender_user }}"
-      make:
-        chdir: "~/filesender/docker/"
-        target: firstrun
+    # - name: Filesender make firstrun - this might take some time
+    #   become: true
+    #   become_user: "{{ filesender_user }}"
+    #   make:
+    #     chdir: "~/filesender/docker/"
+    #     target: firstrun
 
     - name: Create nginx location block
       become: true
