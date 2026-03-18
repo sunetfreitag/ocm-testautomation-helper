@@ -49,7 +49,8 @@ $config['force_ssl'] = false;
 $config['default_timezone'] = getenv('FILESENDER_DEFAULT_TIMEZONE');
 $config['maintenance'] = false;
 $config['auth_remote_user_enabled'] = false;
-$config['site_url'] = 'https://fsbase1.researchcloudtu.ws.cloud.sunet.se';  // String, URL of the application
+$config['site_url'] = 'http://localhost';                // String, URL of the application
+$config['site_name'] = 'testfilesender';
 //$config['site_url'] = getenv('FILESENDER_SITE_URL');                // String, URL of the application
 $config['session_cookie_path'] = '/';
 
@@ -100,8 +101,8 @@ $config['db_password_admin'] =  getenv('FILESENDER_DB_PASSWORD_ADMIN');
 //              SAML configuration
 // ---------------------------------------------
 // NOTE: These MUST have trailing slash
-// $config['auth_sp_saml_simplesamlphp_url'] = getenv('FILESENDER_AUTH_SP_SAML_SIMPLESAMLPHP_URL');     // Url of simplesamlphp
-// $config['auth_sp_saml_simplesamlphp_location'] = '/opt/filesender/simplesamlphp/';   // Location of simplesamlphp libraries
+$config['auth_sp_saml_simplesamlphp_url'] = getenv('FILESENDER_AUTH_SP_SAML_SIMPLESAMLPHP_URL');     // Url of simplesamlphp
+$config['auth_sp_saml_simplesamlphp_location'] = '/opt/filesender/simplesamlphp/';   // Location of simplesamlphp libraries
 
 //      ----------------------------
 //      -------- [optional] --------
@@ -110,27 +111,15 @@ $config['db_password_admin'] =  getenv('FILESENDER_DB_PASSWORD_ADMIN');
 // If you want to overide the SAML simplephp configuration defaults parameter,
 // uncoment and edit the following lines
 //
-// // Authentification type ('saml' or 'shibboleth')
-// Authentication type
-$config['auth_sp_type'] = 'cookie';
+// // Authentification type ('saml' or 'shibboleth' or 'header')
+$config['auth_sp_type'] = 'header';
+$config['auth_remote_user_default_domain'] = 'localhost.localdomain';
 
-$config['auth_sp_cookie_authenticated'] = true;
-$config['auth_sp_cookie_uid'] = 1;
-$config['auth_sp_cookie_name'] = 'Lise Meitner';
-$config['auth_sp_cookie_email'] = 'root@localhost.localdomain';
-
-// Remote User Authentication Settings
-$config['auth_remote_user_default_domain'] = 'fsbase1.researchcloudtu.ws.cloud.sunet.se';  // Optional: for deriving email
-$config['auth_remote_user_logout_url'] = '/logout';  // Optional: redirect after logout
-
-// Attribute mapping
-$config['auth_uid_attribute'] = 'uid';
-$config['auth_email_attribute'] = 'email';
-$config['auth_name_attribute'] = 'name';
-
-// Optionally, disable other auth methods
-$config['auth_sp_enabled'] = false;
-$config['auth_guest_enabled'] = false;
+// $config['auth_sp_force_session_start_first'] = false;
+// $config['auth_sp_fake_authenticated'] = true;
+// $config['auth_sp_fake_uid'] = 'peter';
+// $config['auth_sp_fake_email'] = 'peter@codebridge.nl';
+// $config['auth_sp_fake_name'] = 'Peter';
 
 //
 // // Get email attribute from authentication service
@@ -139,7 +128,7 @@ $config['auth_guest_enabled'] = false;
 // // Get name attribute from authentication service
 //$config['auth_sp_saml_name_attribute'] = 'cn';
 //
-//$config['auth_sp_saml_uid_attribute'] = 'pairwise-id';
+$config['auth_sp_saml_uid_attribute'] = 'uid';
 //
 // // Attribute to use for entitlement. Usually eduPersonEntitlement or isMemberOf
 //$config['auth_sp_saml_entitlement_attribute'] = 'eduPersonEntitlement';

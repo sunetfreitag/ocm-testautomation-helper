@@ -87,8 +87,6 @@ ADD assets/config/simplesamlphp/metadata/saml20-idp-hosted.php.dist /config/simp
 ADD assets/config/simplesamlphp/metadata/saml20-sp-remote.php.dist /config/simplesamlphp/metadata/saml20-sp-remote.php.dist
 ADD assets/config/simplesamlphp/metadata/saml20-idp-remote.php.dist /config/simplesamlphp/metadata/saml20-idp-remote.php.dist
 
-ADD assets/opt/filesender/filesender/classes/auth/AuthSPCookie.class.php /opt/filesender/filesender/classes/auth/AuthSPCookie.class.php
-
 ADD assets/config/simplesamlphp/cert/localhost.crt /opt/filesender/simplesamlphp/cert/localhost.crt
 ADD assets/config/simplesamlphp/cert/localhost.pem /opt/filesender/simplesamlphp/cert/localhost.pem
 
