@@ -208,6 +208,14 @@
         src: "../overlay/filesender/Dockerfile"
         dest: "~/filesender/docker/Dockerfile"
 
+    - name: Copy local Makefile
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.copy:
+        src: "{{ filesender_dev_dir }}/docker/Makefile"
+        dest: "{{ filesender_app_dir }}/docker/Makefile"
+        remote_src: yes
+
     - name: Copy filesender config file
       become: true
       become_user: "{{ filesender_user }}"
