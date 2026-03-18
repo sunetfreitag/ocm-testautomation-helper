@@ -1,11 +1,13 @@
 ---
-- name: Install Docker Engine on Ubuntu
+- name: Install Filesender on SRC Virtual Machine
+  become: true
   hosts: localhost
   vars:
     filesender_repo: "https://github.com/sunetfreitag/filesender.git"
     filesender_branch: "development"
     filesender_app_dir: "~/filesender"
     filesender_dev_dir: "~/filesender_dev"
+    filesender_user: "filesender"
   tasks:
     - name: Get regular user
       command: whoami
@@ -13,214 +15,245 @@
 
     - name: Print username
       ansible.builtin.debug:
-        msg: "Username executing ansible: {{ regular_user }}"
+        msg: "Username executing ansible: {{ regular_user.stdout }}"
 
-    # - name: Get hostname
-    #   command: hostname
-    #   register: raw_hostname
-    # - name: Save filesender hostname in variable
-    #   ansible.builtin.set_fact:
-    #     filesender_hostname: "{{ raw_hostname.stdout | replace('-','.') }}"
+    - name: Get hostname
+      command: hostname
+      register: raw_hostname
+    - name: Save filesender hostname in variable
+      ansible.builtin.set_fact:
+        filesender_hostname: "{{ raw_hostname.stdout | replace('-','.') }}"
 
-    # - name: Delete repos if they already exist
-    #   become: true
-    #   file:
-    #     path: "/home/{{ regular_user }}/filesender"
-    #     state: absent
+    - name: Delete repos if they already exist
+      file:
+        path: "/home/{{ filesender_user }}/filesender"
+        state: absent
 
-    # - name: Delete repos if they already exist
-    #   become: true
-    #   file:
-    #     path: "/home/{{ regular_user }}/filesender_dev"
-    #     state: absent
+    - name: Delete repos if they already exist
+      file:
+        path: "/home/{{ filesender_user }}/filesender_dev"
+        state: absent
 
-    # - name: Update apt package index
-    #   become: true
-    #   ansible.builtin.apt:
-    #     update_cache: yes
+    - name: Update apt package index
+      ansible.builtin.apt:
+        update_cache: yes
 
-    # - name: Install prerequisite packages
-    #   become: true
-    #   ansible.builtin.package:
-    #     name:
-    #       - apt-transport-https
-    #       - ca-certificates
-    #       - curl
-    #       - software-properties-common
-    #     state: present
+    - name: Install prerequisite packages
+      ansible.builtin.package:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - acl
+        state: present
 
-    # - name: Add Docker's official GPG key
-    #   become: true
-    #   ansible.builtin.get_url:
-    #     url: https://download.docker.com/linux/ubuntu/gpg
-    #     dest: /etc/apt/keyrings/docker.asc
-    #     mode: "0644"
+    - name: Add Docker's official GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
 
-    # - name: Add Docker repository
-    #   become: true
-    #   ansible.builtin.apt_repository:
-    #     repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable"
-    #     state: present
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_facts['distribution_release'] }} stable"
+        state: present
 
-    # - name: Update apt package index after adding Docker repo
-    #   become: true
-    #   ansible.builtin.apt:
-    #     update_cache: yes
+    - name: Update apt package index after adding Docker repo
+      ansible.builtin.apt:
+        update_cache: yes
 
-    # - name: Install Docker Engine
-    #   become: true
-    #   ansible.builtin.package:
-    #     name: docker-ce
-    #     state: latest
+    - name: Install Docker Engine
+      ansible.builtin.package:
+        name: docker-ce
+        state: latest
 
-    # - name: Start and enable Docker service
-    #   become: true
-    #   ansible.builtin.service:
-    #     name: docker
-    #     state: started
-    #     enabled: true
+    - name: Start and enable Docker service
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
 
-    # - name: Ensure group "docker" exists with correct gid
-    #   become: true
-    #   ansible.builtin.group:
-    #     name: docker
-    #     state: present
-    #     gid: 1750
+    - name: Ensure group "docker" exists with correct gid
+      ansible.builtin.group:
+        name: docker
+        state: present
+        gid: 1750
 
-    # - name: Set access permissions for docker socket
-    #   become: true
-    #   ansible.builtin.file:
-    #     path: /var/run/docker.sock
-    #     mode: "0666"
+    - name: Set access permissions for docker socket
+      ansible.builtin.file:
+        path: /var/run/docker.sock
+        mode: "0666"
 
-    # - name: Add the ansible user to the docker group
-    #   become: true
-    #   ansible.builtin.user:
-    #     name: "{{ regular_user }}"
-    #     groups: docker
-    #     append: yes
+    - name: Add the user 'james' with a bash shell, appending the group 'admins' and 'developers' to the user's groups
+      ansible.builtin.user:
+        name: "{{ filesender_user }}"
+        shell: /bin/bash
+        groups: docker
+        append: yes
+        create_home: yes
 
-    # - name: Clone FileSender repository
-    #   git:
-    #     repo: "{{ filesender_repo }}"
-    #     dest: "{{ filesender_dev_dir }}"
-    #     version: "{{ filesender_branch }}"
-    #     force: yes
+    - name: Add the filesender user to the docker group
+      ansible.builtin.user:
+        name: "{{ filesender_user }}"
+        groups: docker
+        append: yes
 
-    # - name: Clone FileSender repository
-    #   git:
-    #     repo: "{{ filesender_repo }}"
-    #     dest: "{{ filesender_app_dir }}"
-    #     version: "{{ filesender_branch }}"
-    #     force: yes
+    - name: Clone FileSender repository
+      become: true
+      become_user: "{{ filesender_user }}"
+      git:
+        repo: "{{ filesender_repo }}"
+        dest: "{{ filesender_dev_dir }}"
+        version: "{{ filesender_branch }}"
+        force: yes
 
-    # - name: Add filesender upstream
-    #   ansible.builtin.command:
-    #     cmd: git remote add upstream https://github.com/filesender/filesender.git
-    #     chdir: "{{ filesender_app_dir }}"
+    - name: Clone FileSender repository
+      become: true
+      become_user: "{{ filesender_user }}"
+      git:
+        repo: "{{ filesender_repo }}"
+        dest: "{{ filesender_app_dir }}"
+        version: "{{ filesender_branch }}"
+        force: yes
 
-    # - name: Fetch filesender upstream
-    #   ansible.builtin.command:
-    #     cmd: git fetch upstream
-    #     chdir: "{{ filesender_app_dir }}"
+    - name: Add filesender upstream
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.command:
+        cmd: git remote add upstream https://github.com/filesender/filesender.git
+        chdir: "{{ filesender_app_dir }}"
 
-    # - name: Checkout filesender development3
-    #   ansible.builtin.command:
-    #     cmd: git checkout -b development3 upstream/development3
-    #     chdir: "{{ filesender_app_dir }}"
+    - name: Fetch filesender upstream
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.command:
+        cmd: git fetch upstream
+        chdir: "{{ filesender_app_dir }}"
 
-    # - name: Copy header auth class
-    #   ansible.builtin.copy:
-    #     src: "{{ filesender_dev_dir }}/classes/auth/AuthSPHeader.class.php"
-    #     dest: "{{ filesender_app_dir }}/classes/auth/AuthSPHeader.class.php"
-    #     remote_src: yes
+    - name: Checkout filesender development3
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.command:
+        cmd: git checkout -b development3 upstream/development3
+        chdir: "{{ filesender_app_dir }}"
 
-    # - name: Copy filesender-config.js.php
-    #   ansible.builtin.copy:
-    #     src: "{{ filesender_dev_dir }}/docker/filesender-config.js.php"
-    #     dest: "{{ filesender_app_dir }}/docker/filesender-config.js.php"
-    #     remote_src: yes
+    - name: Copy header auth class
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.copy:
+        src: "{{ filesender_dev_dir }}/classes/auth/AuthSPHeader.class.php"
+        dest: "{{ filesender_app_dir }}/classes/auth/AuthSPHeader.class.php"
+        remote_src: yes
 
-    # - name: Copy .env.example
-    #   ansible.builtin.copy:
-    #     src: "~/filesender/docker/.env.example"
-    #     dest: "~/filesender/docker/.env"
-    #     remote_src: yes
+    - name: Copy filesender-config.js.php
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.copy:
+        src: "{{ filesender_dev_dir }}/docker/filesender-config.js.php"
+        dest: "{{ filesender_app_dir }}/docker/filesender-config.js.php"
+        remote_src: yes
 
-    # - name: Replace http with https in .env
-    #   ansible.builtin.replace:
-    #     path: ~/filesender/docker/.env # Path to the file where the replacement will occur
-    #     regexp: "http://" # The string to be replaced (use regex if needed)
-    #     replace: "https://" # The variable containing the replacement value
+    - name: Copy .env.example
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.copy:
+        src: "~/filesender/docker/.env.example"
+        dest: "~/filesender/docker/.env"
+        remote_src: yes
 
-    # - name: Replace localhost.localdomain with {{ filesender_hostname }} in .env
-    #   ansible.builtin.replace:
-    #     path: ~/filesender/docker/.env # Path to the file where the replacement will occur
-    #     regexp: "localhost.localdomain" # The string to be replaced (use regex if needed)
-    #     replace: "{{ filesender_hostname }}" # The variable containing the replacement value
+    - name: Replace http with https in .env
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.replace:
+        path: ~/filesender/docker/.env # Path to the file where the replacement will occur
+        regexp: "http://" # The string to be replaced (use regex if needed)
+        replace: "https://" # The variable containing the replacement value
 
-    # - name: Replace localhost with {{ filesender_hostname }} in .env
-    #   ansible.builtin.replace:
-    #     path: ~/filesender/docker/.env # Path to the file where the replacement will occur
-    #     regexp: "localhost" # The string to be replaced (use regex if needed)
-    #     replace: "{{ filesender_hostname }}" # The variable containing the replacement value
+    - name: Replace localhost.localdomain with {{ filesender_hostname }} in .env
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.replace:
+        path: ~/filesender/docker/.env # Path to the file where the replacement will occur
+        regexp: "localhost.localdomain" # The string to be replaced (use regex if needed)
+        replace: "{{ filesender_hostname }}" # The variable containing the replacement value
 
-    # - name: Replace version 3.3 with localdev in .env
-    #   ansible.builtin.replace:
-    #     path: ~/filesender/docker/.env # Path to the file where the replacement will occur
-    #     regexp: "3.3" # The string to be replaced (use regex if needed)
-    #     replace: "localdev" # The variable containing the replacement value
+    - name: Replace localhost with {{ filesender_hostname }} in .env
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.replace:
+        path: ~/filesender/docker/.env # Path to the file where the replacement will occur
+        regexp: "localhost" # The string to be replaced (use regex if needed)
+        replace: "{{ filesender_hostname }}" # The variable containing the replacement value
 
-    # - name: Copy local docker compose file
-    #   ansible.builtin.copy:
-    #     src: "../overlay/filesender/docker-compose.yml"
-    #     dest: "~/filesender/docker/docker-compose.yml"
+    - name: Replace version 3.3 with localdev in .env
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.replace:
+        path: ~/filesender/docker/.env # Path to the file where the replacement will occur
+        regexp: "3.3" # The string to be replaced (use regex if needed)
+        replace: "localdev" # The variable containing the replacement value
 
-    # - name: Copy local docker file
-    #   ansible.builtin.copy:
-    #     src: "../overlay/filesender/Dockerfile"
-    #     dest: "~/filesender/docker/Dockerfile"
+    - name: Copy local docker compose file
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.copy:
+        src: "../overlay/filesender/docker-compose.yml"
+        dest: "~/filesender/docker/docker-compose.yml"
 
-    # - name: Copy filesender config file
-    #   ansible.builtin.copy:
-    #     src: "../overlay/filesender/config.php"
-    #     dest: "~/filesender/docker/assets/opt/filesender/filesender/config/config.php"
+    - name: Copy local docker file
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.copy:
+        src: "../overlay/filesender/Dockerfile"
+        dest: "~/filesender/docker/Dockerfile"
 
-    # - name: Replace localhost with {{ filesender_hostname }} in config.php
-    #   ansible.builtin.replace:
-    #     path: "~/filesender/docker/assets/opt/filesender/filesender/config/config.php" # Path to the file where the replacement will occur
-    #     regexp: "localhost" # The string to be replaced (use regex if needed)
-    #     replace: "{{ filesender_hostname }}" # The variable containing the replacement value
+    - name: Copy filesender config file
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.copy:
+        src: "../overlay/filesender/config.php"
+        dest: "~/filesender/docker/assets/opt/filesender/filesender/config/config.php"
 
-    # - name: Filesender make firstrun - this might take some time
-    #   make:
-    #     chdir: "~/filesender/docker/"
-    #     target: firstrun
+    - name: Replace localhost with {{ filesender_hostname }} in config.php
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.replace:
+        path: "~/filesender/docker/assets/opt/filesender/filesender/config/config.php" # Path to the file where the replacement will occur
+        regexp: "localhost" # The string to be replaced (use regex if needed)
+        replace: "{{ filesender_hostname }}" # The variable containing the replacement value
 
-    # - name: Create nginx location block
-    #   become: true
-    #   ansible.builtin.copy:
-    #     dest: /etc/nginx/app-location-conf.d/filesender.conf
-    #     mode: 0644
-    #     content: |
-    #       location / {
-    #           error_page 401 = @custom_401;
-    #           auth_request /validate;
-    #           auth_request_set $username $upstream_http_username;
-    #           proxy_pass http://127.0.0.1:8080;
-    #           proxy_redirect http://localhost:8080/ $scheme://$host/;
-    #           proxy_set_header X-Real-IP $remote_addr;
-    #           proxy_set_header Host $host;
-    #           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    #           proxy_set_header X-Forwarded-Proto $scheme;
-    #           proxy_set_header Upgrade $http_upgrade;
-    #           proxy_set_header Remoteuser $username;
-    #           proxy_set_header Connection $connection_upgrade;
-    #           client_max_body_size 10G;
-    #       }
+    - name: Filesender make firstrun - this might take some time
+      become: true
+      become_user: "{{ filesender_user }}"
+      make:
+        chdir: "~/filesender/docker/"
+        target: firstrun
 
-    # - name: Restart nginx
-    #   become: true
-    #   service:
-    #     name: nginx
-    #     state: restarted
+    - name: Create nginx location block
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/nginx/app-location-conf.d/filesender.conf
+        mode: 0644
+        content: |
+          location / {
+              error_page 401 = @custom_401;
+              auth_request /validate;
+              auth_request_set $username $upstream_http_username;
+              proxy_pass http://127.0.0.1:8080;
+              proxy_redirect http://localhost:8080/ $scheme://$host/;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Remoteuser $username;
+              proxy_set_header Connection $connection_upgrade;
+              client_max_body_size 10G;
+          }
+
+    - name: Restart nginx
+      become: true
+      service:
+        name: nginx
+        state: restarted
