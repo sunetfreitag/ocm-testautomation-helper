@@ -228,7 +228,7 @@
       become_user: "{{ filesender_user }}"
       ansible.builtin.replace:
         path: "~/filesender/docker/assets/opt/filesender/filesender/config/config.php" # Path to the file where the replacement will occur
-        regexp: "localhost" # The string to be replaced (use regex if needed)
+        regexp: "localhost.localdomain" # The string to be replaced (use regex if needed)
         replace: "{{ filesender_hostname }}" # The variable containing the replacement value
 
     - name: Filesender make firstrun - this might take some time
