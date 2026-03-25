@@ -223,12 +223,20 @@
         src: "../overlay/filesender/config.php"
         dest: "~/filesender/docker/assets/opt/filesender/filesender/config/config.php"
 
-    - name: Replace localhost with {{ filesender_hostname }} in config.php
+    - name: Replace localhost.localdomain with {{ filesender_hostname }} in config.php
       become: true
       become_user: "{{ filesender_user }}"
       ansible.builtin.replace:
         path: "~/filesender/docker/assets/opt/filesender/filesender/config/config.php" # Path to the file where the replacement will occur
         regexp: "localhost.localdomain" # The string to be replaced (use regex if needed)
+        replace: "{{ filesender_hostname }}" # The variable containing the replacement value
+
+    - name: Replace localhost with {{ filesender_hostname }} in config.php
+      become: true
+      become_user: "{{ filesender_user }}"
+      ansible.builtin.replace:
+        path: "~/filesender/docker/assets/opt/filesender/filesender/config/config.php" # Path to the file where the replacement will occur
+        regexp: "localhost" # The string to be replaced (use regex if needed)
         replace: "{{ filesender_hostname }}" # The variable containing the replacement value
 
     - name: Filesender make firstrun - this might take some time
