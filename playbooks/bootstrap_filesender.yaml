@@ -2,6 +2,7 @@
 - name: Install Filesender on SRC Virtual Machine
   become: true
   hosts: localhost
+  hosts: filesender_hosts
   vars:
     filesender_repo: "https://github.com/sunetfreitag/filesender.git"
     filesender_branch: "development"
@@ -252,27 +253,12 @@
         path: /etc/nginx/app-location-conf.d/
         state: directory
 
-    - name: Create nginx location block
+    - name: Copy filesender nginx location block
       become: true
       ansible.builtin.copy:
+        src: "../overlay/filesender/filesender.conf"
         dest: /etc/nginx/app-location-conf.d/filesender.conf
         mode: 0644
-        content: |
-          location / {
-              error_page 401 = @custom_401;
-              auth_request /validate;
-              auth_request_set $username $upstream_http_username;
-              proxy_pass http://127.0.0.1:8080;
-              proxy_redirect http://localhost:8080/ $scheme://$host/;
-              proxy_set_header X-Real-IP $remote_addr;
-              proxy_set_header Host $host;
-              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-              proxy_set_header X-Forwarded-Proto $scheme;
-              proxy_set_header Upgrade $http_upgrade;
-              proxy_set_header Remoteuser $username;
-              proxy_set_header Connection $connection_upgrade;
-              client_max_body_size 10G;
-          }
 
     # - name: Restart nginx
     #   become: true
