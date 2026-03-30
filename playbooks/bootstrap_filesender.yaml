@@ -2,7 +2,6 @@
 - name: Install Filesender on SRC Virtual Machine
   become: true
   hosts: localhost
-  hosts: filesender_hosts
   vars:
     filesender_repo: "https://github.com/sunetfreitag/filesender.git"
     filesender_branch: "development"
