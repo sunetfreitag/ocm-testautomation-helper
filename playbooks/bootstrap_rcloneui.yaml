@@ -70,6 +70,12 @@
         src: "../overlay/rcloneui/rcloneui.service"
         dest: /etc/systemd/system/rcloneui.service
 
+    - name: Enable and start rcloneui service
+      systemd:
+        name: rcloneui
+        state: started
+        enabled: true
+
     - name: Create a directory if it does not exist
       ansible.builtin.file:
         path: /etc/nginx/app-location-conf.d/
