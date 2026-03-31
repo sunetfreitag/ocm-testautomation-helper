@@ -1,0 +1,88 @@
+---
+- name: Install Rclone UI on SRC Virtual Machine
+  hosts: localhost
+  vars:
+    rcloneui_user: "rclone"
+    rcloneui_group: "rclone"
+  tasks:
+    - name: Get regular user
+      command: whoami
+      register: regular_user
+
+    - name: Print username
+      ansible.builtin.debug:
+        msg: "Username executing ansible: {{ regular_user.stdout }}"
+
+    - name: Get hostname
+      command: hostname
+      register: raw_hostname
+    - name: Save rcloneui hostname in variable
+      ansible.builtin.set_fact:
+        rcloneui_hostname: "{{ raw_hostname.stdout | replace('-','.') }}"
+
+    - name: Update apt package index
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install prerequisite packages
+      ansible.builtin.package:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - acl
+        state: present
+
+    - name: Ensure that {{ rcloneui_group }} group exists
+      ansible.builtin.group:
+        name: "{{ rcloneui_group }}"
+        state: present
+
+    - name: Add user for {{ rcloneui_group }}
+      ansible.builtin.user:
+        name: "{{ rcloneui_user }}"
+        shell: /bin/bash
+        groups: "{{ rcloneui_user }}"
+        home: /var/lib/{{ rcloneui_user }}
+
+    - name: Create jenkins user home directory
+      ansible.builtin.file:
+        path: /var/lib/{{ rcloneui_user }}
+        state: directory
+        owner: "{{ rcloneui_user }}"
+        group: "{{ rcloneui_user }}"
+
+    - name: Create folder for {{ rcloneui_user }} service
+      ansible.builtin.file:
+        path: /usr/local/{{ rcloneui_user }}-service
+        state: directory
+        owner: "{{ rcloneui_user }}"
+        group: "{{ rcloneui_user }}"
+
+    - name: Copy start rclone agent script
+      ansible.builtin.copy:
+        src: "../overlay/rcloneui/start-agent.sh"
+        dest: /usr/local/{{ rcloneui_user }}-service/start-agent.sh
+
+    - name: Copy rcloneui service script
+      ansible.builtin.copy:
+        src: "../overlay/rcloneui/rcloneui.service"
+        dest: /etc/systemd/system/rcloneui.service
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: /etc/nginx/app-location-conf.d/
+        state: directory
+
+    - name: Copy rcloneui nginx location block
+      ansible.builtin.copy:
+        src: "../overlay/rcloneui/rcloneui.conf"
+        dest: /etc/nginx/app-location-conf.d/rcloneui.conf
+        mode: 0644
+
+    # - name: Restart nginx
+    #   become: true
+    #   service:
+    #     name: nginx
+    #     state: restarted

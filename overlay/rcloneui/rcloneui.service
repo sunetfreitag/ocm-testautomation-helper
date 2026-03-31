@@ -1,0 +1,11 @@
+[Unit]
+Description=Rclone UI Agent
+
+[Service]
+User=rclone
+WorkingDirectory=/var/lib/rclone
+ExecStart=/bin/bash /usr/local/rclone-service/start-agent.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
